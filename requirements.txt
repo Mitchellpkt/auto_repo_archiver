@@ -1,3 +1,5 @@
 arxiv
 tqdm
 PyMuPDF
+requests
+loguru
