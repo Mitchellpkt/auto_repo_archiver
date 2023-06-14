@@ -5,6 +5,8 @@ from pathlib import Path
 from tqdm.auto import tqdm
 import fitz  # from PyMuPDF
 import re
+import requests
+from loguru import logger
 
 
 def search_arxiv(query: str, max_results: int) -> List[Result]:
@@ -26,7 +28,9 @@ def search_arxiv(query: str, max_results: int) -> List[Result]:
 
 
 def download_and_scan_papers(
-    results: List[Result], directory: Union[str, Path]
+    results: List[Result],
+    directory: Union[str, Path],
+    trigger_archive: bool = True,
 ) -> None:
     """
     Download the PDFs of papers from a list of Result objects to a specified directory
@@ -41,12 +45,15 @@ def download_and_scan_papers(
 
     github_url_pattern = re.compile(r"https?://github\.com/[^\s,]+")
 
-    for result in tqdm(results):
+    for result in tqdm(results, disable=True):
         file_path = dir_path / f"{result.entry_id.split('/')[-1]}.pdf"
         result.download_pdf(filename=str(file_path))
 
         # Open the PDF file
         doc = fitz.open(file_path)
+
+        logger.info(f"\n\nPaper: {result.title}")
+        logger.info(f"arXiv ID: {result.entry_id.split('/')[-1]}")
 
         # Iterate over each page and extract the text
         for page in doc:
@@ -55,21 +62,42 @@ def download_and_scan_papers(
 
             # If GitHub URLs are found, print the paper info and the URLs
             if github_urls:
-                print(f"\nPaper: {result.title}")
-                print(f"arXiv ID: {result.entry_id.split('/')[-1]}")
-                print("GitHub URLs found:")
+                logger.info("GitHub URLs found:")
                 for url in github_urls:
-                    print(url)
-                print()
+                    if trigger_archive:
+                        archive_urls([url])
+                        logger.info(f"  (archive triggered)")
+                    else:
+                        logger.info(url)
+                logger.info()
+
+
+def archive_urls(urls: List[str]) -> None:
+    """
+    Trigger the Wayback Machine to archive a list of URLs.
+
+    Parameters:
+    urls (List[str]): The list of URLs to be archived.
+    """
+    for url in urls:
+        response = requests.get(f"http://archive.org/wayback/available?url={url}")
+        data = response.json()
+
+        if data.get("archived_snapshots"):
+            logger.info(f"The URL {url} is already archived.")
+            logger.info(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
+        else:
+            logger.info(f"The URL {url} is not yet archived.")
 
 
 if __name__ == "__main__":
     keyword: str = "quantum"
     limit: int = 10
+    config_trigger_archive: bool = True
 
     # --
     search_results = search_arxiv(keyword, limit)
     for result in search_results:
-        print(result.entry_id)
-    download_and_scan_papers(search_results, "./pdfs")
-    print("done")
+        logger.info(result.entry_id)
+    download_and_scan_papers(search_results, "./pdfs", config_trigger_archive)
+    logger.info("done")
