@@ -76,6 +76,10 @@ def download_and_scan_papers(
                 print()
 
 
+import requests
+from typing import List
+
+
 def archive_urls(urls: List[str]) -> None:
     """
     Trigger the Wayback Machine to archive a list of URLs.
@@ -92,11 +96,16 @@ def archive_urls(urls: List[str]) -> None:
             print(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
         else:
             print(f"The URL {url} is not yet archived. Archiving now...")
-            save_response = requests.get(f"https://web.archive.org/save/{url}")
+            save_response = requests.post(
+                f"https://web.archive.org/save/{url}",
+                data={"url": url, "capture_all": "on"},
+            )
             if save_response.status_code == 200:
                 print(f"Successfully archived {url}")
             else:
-                print(f"Failed to archive {url}")
+                print(
+                    f"Failed to archive {url}. Status code: {save_response.status_code}"
+                )
 
 
 if __name__ == "__main__":
