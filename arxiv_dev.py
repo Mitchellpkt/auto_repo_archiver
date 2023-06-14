@@ -7,6 +7,8 @@ import fitz  # from PyMuPDF
 import re
 import requests
 from loguru import logger
+import requests
+from typing import List
 
 
 def search_arxiv(query: str, max_results: int) -> List[Result]:
@@ -47,12 +49,14 @@ def download_and_scan_papers(
 
     for result in tqdm(results, disable=True):
         file_path = dir_path / f"{result.entry_id.split('/')[-1]}.pdf"
-        result.download_pdf(filename=str(file_path))
+        if not file_path.exists():
+            result.download_pdf(filename=str(file_path))
 
         # Open the PDF file
         doc = fitz.open(file_path)
 
-        logger.info(f"\n\nPaper: {result.title}")
+        print()
+        logger.info(f"Paper: {result.title}")
         logger.info(f"arXiv ID: {result.entry_id.split('/')[-1]}")
 
         # Iterate over each page and extract the text
@@ -69,7 +73,7 @@ def download_and_scan_papers(
                         logger.info(f"  (archive triggered)")
                     else:
                         logger.info(url)
-                logger.info()
+                print()
 
 
 def archive_urls(urls: List[str]) -> None:
@@ -84,14 +88,19 @@ def archive_urls(urls: List[str]) -> None:
         data = response.json()
 
         if data.get("archived_snapshots"):
-            logger.info(f"The URL {url} is already archived.")
-            logger.info(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
+            print(f"The URL {url} is already archived.")
+            print(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
         else:
-            logger.info(f"The URL {url} is not yet archived.")
+            print(f"The URL {url} is not yet archived. Archiving now...")
+            save_response = requests.get(f"https://web.archive.org/save/{url}")
+            if save_response.status_code == 200:
+                print(f"Successfully archived {url}")
+            else:
+                print(f"Failed to archive {url}")
 
 
 if __name__ == "__main__":
-    keyword: str = "quantum"
+    keyword: str = "open-source"
     limit: int = 10
     config_trigger_archive: bool = True
 
