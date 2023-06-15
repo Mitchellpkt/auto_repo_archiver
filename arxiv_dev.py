@@ -1,9 +1,9 @@
 import re
 from pathlib import Path
-from typing import List
-from typing import Union
+from typing import List, Union
 
 import fitz  # from PyMuPDF
+import requests
 from arxiv import Search, SortCriterion, Result
 from loguru import logger
 from tqdm.auto import tqdm
@@ -76,10 +76,6 @@ def download_and_scan_papers(
             logger.info(f"Error processing {result.entry_id.split('/')[-1]}: {e}")
 
 
-import requests
-from typing import List
-
-
 def archive_urls(urls: List[str]) -> None:
     """
     Trigger the Wayback Machine to archive a list of URLs.
@@ -111,7 +107,7 @@ def archive_urls(urls: List[str]) -> None:
 
 
 if __name__ == "__main__":
-    keyword: str = "postquantum"
+    keyword: str = "cryptography"
     limit: int = 50
     config_trigger_archive: bool = True
 
