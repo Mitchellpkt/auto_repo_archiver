@@ -68,7 +68,6 @@ def download_and_scan_papers(
                 for url in github_urls:
                     if trigger_archive:
                         archive_urls([url])
-                        logger.info(f"  (archive triggered)")
                     else:
                         logger.info(url)
                 print()
@@ -90,27 +89,27 @@ def archive_urls(urls: List[str]) -> None:
         data = response.json()
 
         if data.get("archived_snapshots"):
-            print(f"The URL {url} is already archived.")
-            print(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
+            logger.info(f"The URL {url} is already archived.")
+            logger.info(f"Archived URL: {data['archived_snapshots']['closest']['url']}")
         else:
-            print(f"The URL {url} is not yet archived. Archiving now...")
+            logger.info(f"The URL {url} is not yet archived. Archiving now...")
             save_response = requests.post(
                 f"https://web.archive.org/save/{url}",
                 data={"url": url, "capture_all": "on"},
             )
             if save_response.status_code == 200:
-                print(
+                logger.info(
                     f"Got success response for {url} - Note, it may take some minutes or hours to show up"
                 )
             else:
-                print(
+                logger.info(
                     f"Failed to archive {url}. Status code: {save_response.status_code}"
                 )
 
 
 if __name__ == "__main__":
-    keyword: str = "code"
-    limit: int = 10
+    keyword: str = "postquantum"
+    limit: int = 20
     config_trigger_archive: bool = True
 
     # --
