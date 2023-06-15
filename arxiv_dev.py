@@ -1,14 +1,12 @@
-from typing import List
-from arxiv import Search, SortCriterion, Result
-from typing import Union
-from pathlib import Path
-from tqdm.auto import tqdm
-import fitz  # from PyMuPDF
 import re
-import requests
-from loguru import logger
-import requests
+from pathlib import Path
 from typing import List
+from typing import Union
+
+import fitz  # from PyMuPDF
+from arxiv import Search, SortCriterion, Result
+from loguru import logger
+from tqdm.auto import tqdm
 
 
 def search_arxiv(query: str, max_results: int) -> List[Result]:
@@ -101,7 +99,9 @@ def archive_urls(urls: List[str]) -> None:
                 data={"url": url, "capture_all": "on"},
             )
             if save_response.status_code == 200:
-                print(f"Successfully archived {url}")
+                print(
+                    f"Got success response for {url} - Note, it may take some minutes or hours to show up"
+                )
             else:
                 print(
                     f"Failed to archive {url}. Status code: {save_response.status_code}"
@@ -109,11 +109,12 @@ def archive_urls(urls: List[str]) -> None:
 
 
 if __name__ == "__main__":
-    keyword: str = "open-source"
+    keyword: str = "code"
     limit: int = 10
     config_trigger_archive: bool = True
 
     # --
+    logger.info("starting...")
     search_results = search_arxiv(keyword, limit)
     for result in search_results:
         logger.info(result.entry_id)
