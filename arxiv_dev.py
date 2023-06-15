@@ -46,31 +46,34 @@ def download_and_scan_papers(
     github_url_pattern = re.compile(r"https?://github\.com/[^\s,]+")
 
     for result in tqdm(results, disable=True):
-        file_path = dir_path / f"{result.entry_id.split('/')[-1]}.pdf"
-        if not file_path.exists():
-            result.download_pdf(filename=str(file_path))
+        try:
+            file_path = dir_path / f"{result.entry_id.split('/')[-1]}.pdf"
+            if not file_path.exists():
+                result.download_pdf(filename=str(file_path))
 
-        # Open the PDF file
-        doc = fitz.open(file_path)
+            # Open the PDF file
+            doc = fitz.open(file_path)
 
-        print()
-        logger.info(f"Paper: {result.title}")
-        logger.info(f"arXiv ID: {result.entry_id.split('/')[-1]}")
+            logger.info(" ")
+            logger.info(f"Paper: {result.title}")
+            logger.info(f"arXiv ID: {result.entry_id.split('/')[-1]}")
 
-        # Iterate over each page and extract the text
-        for page in doc:
-            text = page.get_text()
-            github_urls = github_url_pattern.findall(text)
+            # Iterate over each page and extract the text
+            for page in doc:
+                text = page.get_text()
+                github_urls = github_url_pattern.findall(text)
 
-            # If GitHub URLs are found, print the paper info and the URLs
-            if github_urls:
-                logger.info("GitHub URLs found:")
-                for url in github_urls:
-                    if trigger_archive:
-                        archive_urls([url])
-                    else:
-                        logger.info(url)
-                print()
+                # If GitHub URLs are found, print the paper info and the URLs
+                if github_urls:
+                    logger.info("GitHub URLs found:")
+                    for url in github_urls:
+                        if trigger_archive:
+                            archive_urls([url])
+                        else:
+                            logger.info(url)
+                    logger.info(" ")
+        except Exception as e:
+            logger.info(f"Error processing {result.entry_id.split('/')[-1]}: {e}")
 
 
 import requests
@@ -109,7 +112,7 @@ def archive_urls(urls: List[str]) -> None:
 
 if __name__ == "__main__":
     keyword: str = "postquantum"
-    limit: int = 20
+    limit: int = 50
     config_trigger_archive: bool = True
 
     # --
